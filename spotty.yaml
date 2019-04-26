@@ -1,0 +1,38 @@
+project:
+  name: dsec-meetup
+  syncFilters:
+    - exclude:
+        - .git/*
+        - .idea/*
+        - '*/__pycache__/*'
+        - training/*
+
+container:
+  projectDir: /workspace/project
+  image: tensorflow/tensorflow:1.13.1-py3-jupyter
+  ports: [6006, 8888]
+  volumeMounts:
+    - name: workspace
+      mountPath: /workspace
+
+instances:
+  - name: i1
+    provider: aws
+    parameters:
+      region: eu-west-1
+      instanceType: t2.micro
+      amiId: ami-05dd06906f5f5838e
+      onDemandInstance: true
+      volumes:
+        - name: workspace
+          parameters:
+            size: 10
+            deletionPolicy: retain
+
+scripts:
+  tensorboard: |
+    tensorboard --logdir training
+  jupyter: |
+    jupyter notebook --allow-root --ip 0.0.0.0 --notebook-dir=/workspace/project
+  train: |
+    PYTHONPATH=. python model_example/train.py -n {{MODEL_NAME}}
